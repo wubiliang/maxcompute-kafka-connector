@@ -50,7 +50,7 @@ public class StsService {
             stsUserBo.setToken(token);
             stsUserBo.setOwnId(ownId);
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new IllegalStateException(e);
         }
         return stsUserBo;
     }
