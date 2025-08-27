@@ -7,12 +7,17 @@ import com.aliyuncs.http.MethodType;
 import com.aliyuncs.http.ProtocolType;
 import com.aliyuncs.profile.DefaultProfile;
 import com.aliyuncs.profile.IClientProfile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class StsService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(StsService.class);
+
     /**
      * we assume others by ownId
      */
-    public StsUserBo getAssumeRole(String ownId, String regionId, String stsEndpoint, String ak, String sk, String roleName) {
+    public StsUserBo getAssumeRole(String ownId, String regionId, String stsEndpoint, String ak, String sk,
+                                   String roleName) {
 
         StsUserBo stsUserBo = new StsUserBo();
         try {
@@ -32,9 +37,13 @@ public class StsService {
             request.setDurationSeconds(1 * 60 * 60L);
 
             AssumeRoleResponse response = client.getAcsResponse(request);
+            String requestId = response.getRequestId();
+
             String userAk = response.getCredentials().getAccessKeyId();
             String userSk = response.getCredentials().getAccessKeySecret();
             String token = response.getCredentials().getSecurityToken();
+
+            LOGGER.info("Fetch sts token success, request: {}, stsAk: {}", requestId, userAk);
 
             stsUserBo.setAk(userAk);
             stsUserBo.setSk(userSk);
