@@ -287,13 +287,17 @@ public class MaxComputeSinkTask extends SinkTask {
       SinkStatusContext curContext = item.getValue();
       List<SinkRecord> left = curContext.getRecordQueue();
       if (!left.isEmpty()) {
-        MaxComputeSinkWriter curWriter = genSinkWriter(partition);
-        curWriter.setRecordBuffer(left);
-        curWriter.setErrorReporter(runtimeErrorWriter);
-        curWriter.setSinkStatusContext(curContext);
-        curWriter.setSkipError(skipErrorRecords);
-        writerTasks.add(executor.submit(curWriter));
-        sinkStatus.get(partition).resetRecordQueue();
+          try {
+              MaxComputeSinkWriter curWriter = genSinkWriter(partition);
+              curWriter.setRecordBuffer(left);
+              curWriter.setErrorReporter(runtimeErrorWriter);
+              curWriter.setSinkStatusContext(curContext);
+              curWriter.setSkipError(skipErrorRecords);
+              writerTasks.add(executor.submit(curWriter));
+              sinkStatus.get(partition).resetRecordQueue();
+          }catch (Throwable e){
+              LOGGER.error("flush buffer error,partition:{},error:{} ", partition, e.getMessage(), e);
+          }
       }
     }
   }
@@ -568,7 +572,10 @@ public class MaxComputeSinkTask extends SinkTask {
                 writer.getMinOffset() + ", topic: " + partition.topic() +
                 ", partition: " + partition.partition());
     // Reset offset
-    context.offset(partition, writer.getMinOffset());
+    Long minOffset = writer.getMinOffset();
+    if(minOffset!=null){
+        context.offset(partition, writer.getMinOffset());
+    }
   }
 
   protected static TableSchema parseSchema(String json) {

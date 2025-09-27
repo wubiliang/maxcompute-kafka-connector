@@ -186,7 +186,7 @@ public class MaxComputeSinkWriter implements Closeable, Callable<Boolean> {
   /**
    * Return the minimum uncommitted offset
    */
-  public long getMinOffset() {
+  public Long getMinOffset() {
     return minOffset;
   }
 
@@ -343,6 +343,7 @@ public class MaxComputeSinkWriter implements Closeable, Callable<Boolean> {
       try {
         session.commit();
         LOGGER.debug("Thread({}) session.commit() successfully!", threadName);
+        minOffset = null;
         break;
       } catch (TunnelException e) {
         // TODO: random backoff
