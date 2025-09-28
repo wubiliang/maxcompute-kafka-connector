@@ -22,11 +22,9 @@ package com.aliyun.odps.kafka.connect.converter;
 
 import java.util.Objects;
 
-import org.apache.kafka.connect.sink.SinkRecord;
-
 import com.aliyun.odps.data.Binary;
 import com.aliyun.odps.data.Record;
-
+import org.apache.kafka.connect.sink.SinkRecord;
 
 /**
  * Convert a {@link SinkRecord} to a {@link Record} with the following schema:
@@ -39,33 +37,34 @@ import com.aliyun.odps.data.Record;
  */
 public class BinaryRecordConverter implements RecordConverter {
 
-  private RecordConverterBuilder.Mode mode;
+    private RecordConverterBuilder.Mode mode;
 
-  public BinaryRecordConverter(RecordConverterBuilder.Mode mode) {
-    this.mode = Objects.requireNonNull(mode);
-  }
-
-  @Override
-  public void convert(SinkRecord in, Record out) {
-    out.setString(TOPIC, in.topic());
-    out.setBigint(PARTITION, in.kafkaPartition().longValue());
-    out.setBigint(OFFSET, in.kafkaOffset());
-
-    switch (mode) {
-      case KEY:
-        out.set(KEY, convertToBinary(in.key()));
-        break;
-      case VALUE:
-        out.set(VALUE, convertToBinary(in.value()));
-        break;
-      case DEFAULT:
-      default:
-        out.set(KEY, convertToBinary(in.key()));
-        out.set(VALUE, convertToBinary(in.value()));
+    public BinaryRecordConverter(RecordConverterBuilder.Mode mode) {
+        this.mode = Objects.requireNonNull(mode);
     }
-  }
 
-  private Binary convertToBinary(Object data) {
-    return new Binary(((byte[]) data));
-  }
+    @Override
+    public void convert(SinkRecord in, Record out) {
+        out.setString(TOPIC, in.topic());
+        out.setBigint(PARTITION, in.kafkaPartition().longValue());
+        out.setBigint(OFFSET, in.kafkaOffset());
+        out.setBigint(INSERT_TIME, in.timestamp());
+
+        switch (mode) {
+            case KEY:
+                out.set(KEY, convertToBinary(in.key()));
+                break;
+            case VALUE:
+                out.set(VALUE, convertToBinary(in.value()));
+                break;
+            case DEFAULT:
+            default:
+                out.set(KEY, convertToBinary(in.key()));
+                out.set(VALUE, convertToBinary(in.value()));
+        }
+    }
+
+    private Binary convertToBinary(Object data) {
+        return new Binary(((byte[])data));
+    }
 }

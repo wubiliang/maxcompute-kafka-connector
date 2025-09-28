@@ -52,6 +52,7 @@ public class MaxComputeSinkConnectorConfig extends AbstractConfig {
     FORMAT("format"),
     MODE("mode"),
     PARTITION_WINDOW_TYPE("partition_window_type"),
+    USE_NEW_PARTITION_FORMAT("use_new_partition_format"),
     TIME_ZONE("time_zone"),
     USE_STREAM_TUNNEL("use_streaming"),
     BUFFER_SIZE_KB("buffer_size_kb"),
@@ -189,6 +190,11 @@ public class MaxComputeSinkConnectorConfig extends AbstractConfig {
                 "HOUR",
                 Importance.HIGH,
                 "Partition window type, could be DAY, HOUR")
+        .define(BaseParameter.USE_NEW_PARTITION_FORMAT.getName(),
+            Type.BOOLEAN,
+            Boolean.FALSE,
+            Importance.HIGH,
+            "use new partition format,if true then yyyy-MM-dd else MM-dd-yyyy")
         .define(BaseParameter.TIME_ZONE.getName(),
                 Type.STRING,
                 TimeZone.getDefault().getID(),

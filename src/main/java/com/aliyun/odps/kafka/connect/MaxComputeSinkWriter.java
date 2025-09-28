@@ -31,6 +31,7 @@ import java.util.Objects;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
 
+import com.aliyun.odps.kafka.connect.MaxComputeSinkConnectorConfig.BaseParameter;
 import com.aliyun.odps.tunnel.io.StreamRecordPackImpl;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -57,8 +58,10 @@ public class MaxComputeSinkWriter implements Closeable, Callable<Boolean> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MaxComputeSinkWriter.class);
 
-  private static final DateTimeFormatter DATETIME_FORMATTER =
-      DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
+    private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
+    private static final DateTimeFormatter DAY_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final DateTimeFormatter HOUR_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH");
+    private static final DateTimeFormatter MINUTE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
   private static final int DEFAULT_RETRY_TIMES = 3;
   private static final int DEFAULT_RETRY_INTERVAL_SECONDS = 10;
@@ -90,6 +93,7 @@ public class MaxComputeSinkWriter implements Closeable, Callable<Boolean> {
   private int bufferSize;
   private RecordConverter converter;
   private PartitionWindowType partitionWindowType;
+  private final boolean useNewPartitionFormat;
   private TimeZone tz;
   private int retryTimes;
   private boolean useStreamingTunnel = false;
@@ -133,6 +137,7 @@ public class MaxComputeSinkWriter implements Closeable, Callable<Boolean> {
     this.converter = Objects.requireNonNull(converter);
     this.bufferSize = bufferSize;
     this.partitionWindowType = partitionWindowType;
+    this.useNewPartitionFormat = config.getBoolean(BaseParameter.USE_NEW_PARTITION_FORMAT.getName());
     this.tz = Objects.requireNonNull(tz);
     this.useStreamingTunnel = useStreamingTunnel;
     this.retryTimes = retryTimes;
@@ -419,21 +424,37 @@ public class MaxComputeSinkWriter implements Closeable, Callable<Boolean> {
   private PartitionSpec getPartitionSpec(Long timestamp) {
     PartitionSpec partitionSpec = new PartitionSpec();
     ZonedDateTime dt = Instant.ofEpochSecond(timestamp).atZone(tz.toZoneId());
-    String datetimeString = dt.format(DATETIME_FORMATTER);
 
-    switch (partitionWindowType) {
-      case DAY:
-        partitionSpec.set("pt", datetimeString.substring(0, 10));
-        break;
-      case HOUR:
-        partitionSpec.set("pt", datetimeString.substring(0, 13));
-        break;
-      case MINUTE:
-        partitionSpec.set("pt", datetimeString.substring(0, 16));
-        break;
-      default:
-        throw new RuntimeException("Unsupported partition window type");
-    }
+      if (useNewPartitionFormat) {
+          switch (partitionWindowType) {
+              case DAY:
+                  partitionSpec.set(RecordConverter.PT, dt.format(DAY_FORMATTER));
+                  break;
+              case HOUR:
+                  partitionSpec.set(RecordConverter.PT, dt.format(HOUR_FORMATTER));
+                  break;
+              case MINUTE:
+                  partitionSpec.set(RecordConverter.PT, dt.format(MINUTE_FORMATTER));
+                  break;
+              default:
+                  throw new RuntimeException("Unsupported partition window type");
+          }
+      } else {
+          String datetimeString = dt.format(DATETIME_FORMATTER);
+          switch (partitionWindowType) {
+              case DAY:
+                  partitionSpec.set(RecordConverter.PT, datetimeString.substring(0, 10));
+                  break;
+              case HOUR:
+                  partitionSpec.set(RecordConverter.PT, datetimeString.substring(0, 13));
+                  break;
+              case MINUTE:
+                  partitionSpec.set(RecordConverter.PT, datetimeString.substring(0, 16));
+                  break;
+              default:
+                  throw new RuntimeException("Unsupported partition window type");
+          }
+      }
 
     return partitionSpec;
   }

@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.aliyun.odps.kafka.connect.MaxComputeSinkConnectorConfig.BaseParameter;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.sink.SinkConnector;
@@ -64,9 +65,9 @@ public class MaxComputeSinkConnector extends SinkConnector {
 
     try {
       odps.projects().exists(config.getString(
-          MaxComputeSinkConnectorConfig.BaseParameter.MAXCOMPUTE_PROJECT.getName()));
+          BaseParameter.MAXCOMPUTE_PROJECT.getName()));
       odps.tables().exists(
-          config.getString(MaxComputeSinkConnectorConfig.BaseParameter.MAXCOMPUTE_TABLE.getName()));
+          config.getString(BaseParameter.MAXCOMPUTE_TABLE.getName()));
     } catch (OdpsException e) {
       throw new IllegalArgumentException("Cannot find configured MaxCompute project or table");
     }
@@ -86,88 +87,90 @@ public class MaxComputeSinkConnector extends SinkConnector {
     LinkedList<Map<String, String>> taskConfigs = new LinkedList<>();
     for (int i = 0; i < maxTasks; i++) {
       Map<String, String> taskConfig = new HashMap<>();
-      taskConfig.put(MaxComputeSinkConnectorConfig.BaseParameter.ACCESS_ID.getName(),
+      taskConfig.put(BaseParameter.ACCESS_ID.getName(),
                      config.getString(
-                         MaxComputeSinkConnectorConfig.BaseParameter.ACCESS_ID.getName()));
-      taskConfig.put(MaxComputeSinkConnectorConfig.BaseParameter.TUNNEL_ENDPOINT.getName(),
+                         BaseParameter.ACCESS_ID.getName()));
+      taskConfig.put(BaseParameter.TUNNEL_ENDPOINT.getName(),
                      config.getString(
-                         MaxComputeSinkConnectorConfig.BaseParameter.TUNNEL_ENDPOINT.getName()));
-      taskConfig.put(MaxComputeSinkConnectorConfig.BaseParameter.ACCESS_KEY.getName(),
+                         BaseParameter.TUNNEL_ENDPOINT.getName()));
+      taskConfig.put(BaseParameter.ACCESS_KEY.getName(),
                      config.getString(
-                         MaxComputeSinkConnectorConfig.BaseParameter.ACCESS_KEY.getName()));
-      taskConfig.put(MaxComputeSinkConnectorConfig.BaseParameter.ACCOUNT_ID.getName(),
+                         BaseParameter.ACCESS_KEY.getName()));
+      taskConfig.put(BaseParameter.ACCOUNT_ID.getName(),
                      config.getString(
-                         MaxComputeSinkConnectorConfig.BaseParameter.ACCOUNT_ID.getName()));
-      taskConfig.put(MaxComputeSinkConnectorConfig.BaseParameter.REGION_ID.getName(),
+                         BaseParameter.ACCOUNT_ID.getName()));
+      taskConfig.put(BaseParameter.REGION_ID.getName(),
                      config.getString(
-                         MaxComputeSinkConnectorConfig.BaseParameter.REGION_ID.getName()));
-      taskConfig.put(MaxComputeSinkConnectorConfig.BaseParameter.STS_ENDPOINT.getName(),
+                         BaseParameter.REGION_ID.getName()));
+      taskConfig.put(BaseParameter.STS_ENDPOINT.getName(),
                      config.getString(
-                         MaxComputeSinkConnectorConfig.BaseParameter.STS_ENDPOINT.getName()));
-      taskConfig.put(MaxComputeSinkConnectorConfig.BaseParameter.ROLE_NAME.getName(),
+                         BaseParameter.STS_ENDPOINT.getName()));
+      taskConfig.put(BaseParameter.ROLE_NAME.getName(),
                      config.getString(
-                         MaxComputeSinkConnectorConfig.BaseParameter.ROLE_NAME.getName()));
-      taskConfig.put(MaxComputeSinkConnectorConfig.BaseParameter.ACCOUNT_TYPE.getName(),
+                         BaseParameter.ROLE_NAME.getName()));
+      taskConfig.put(BaseParameter.ACCOUNT_TYPE.getName(),
                      config.getString(
-                         MaxComputeSinkConnectorConfig.BaseParameter.ACCOUNT_TYPE.getName()));
-      taskConfig.put(MaxComputeSinkConnectorConfig.BaseParameter.CLIENT_TIMEOUT_MS.getName(),
+                         BaseParameter.ACCOUNT_TYPE.getName()));
+      taskConfig.put(BaseParameter.CLIENT_TIMEOUT_MS.getName(),
                      String.valueOf(
                          config.getLong(
-                             MaxComputeSinkConnectorConfig.BaseParameter.CLIENT_TIMEOUT_MS.getName())));
-      taskConfig.put(MaxComputeSinkConnectorConfig.BaseParameter.MAXCOMPUTE_PROJECT.getName(),
+                             BaseParameter.CLIENT_TIMEOUT_MS.getName())));
+      taskConfig.put(BaseParameter.MAXCOMPUTE_PROJECT.getName(),
                      config.getString(
-                         MaxComputeSinkConnectorConfig.BaseParameter.MAXCOMPUTE_PROJECT.getName()));
-      taskConfig.put(MaxComputeSinkConnectorConfig.BaseParameter.MAXCOMPUTE_SCHEMA.getName(),
+                         BaseParameter.MAXCOMPUTE_PROJECT.getName()));
+      taskConfig.put(BaseParameter.MAXCOMPUTE_SCHEMA.getName(),
                      config.getString(
-                         MaxComputeSinkConnectorConfig.BaseParameter.MAXCOMPUTE_SCHEMA.getName()));
-      taskConfig.put(MaxComputeSinkConnectorConfig.BaseParameter.MAXCOMPUTE_ENDPOINT.getName(),
+                         BaseParameter.MAXCOMPUTE_SCHEMA.getName()));
+      taskConfig.put(BaseParameter.MAXCOMPUTE_ENDPOINT.getName(),
                      config.getString(
-                         MaxComputeSinkConnectorConfig.BaseParameter.MAXCOMPUTE_ENDPOINT.getName()));
-      taskConfig.put(MaxComputeSinkConnectorConfig.BaseParameter.MAXCOMPUTE_TABLE.getName(),
+                         BaseParameter.MAXCOMPUTE_ENDPOINT.getName()));
+      taskConfig.put(BaseParameter.MAXCOMPUTE_TABLE.getName(),
                      config.getString(
-                         MaxComputeSinkConnectorConfig.BaseParameter.MAXCOMPUTE_TABLE.getName()));
+                         BaseParameter.MAXCOMPUTE_TABLE.getName()));
       taskConfig.put(
-          MaxComputeSinkConnectorConfig.BaseParameter.RUNTIME_ERROR_TOPIC_BOOTSTRAP_SERVERS.getName(),
+          BaseParameter.RUNTIME_ERROR_TOPIC_BOOTSTRAP_SERVERS.getName(),
           config
               .getString(
-                  MaxComputeSinkConnectorConfig.BaseParameter.RUNTIME_ERROR_TOPIC_BOOTSTRAP_SERVERS.getName()));
-      taskConfig.put(MaxComputeSinkConnectorConfig.BaseParameter.RUNTIME_ERROR_TOPIC_NAME.getName(),
+                  BaseParameter.RUNTIME_ERROR_TOPIC_BOOTSTRAP_SERVERS.getName()));
+      taskConfig.put(BaseParameter.RUNTIME_ERROR_TOPIC_NAME.getName(),
                      config.getString(
-                         MaxComputeSinkConnectorConfig.BaseParameter.RUNTIME_ERROR_TOPIC_NAME.getName()));
-      taskConfig.put(MaxComputeSinkConnectorConfig.BaseParameter.FORMAT.getName(),
+                         BaseParameter.RUNTIME_ERROR_TOPIC_NAME.getName()));
+      taskConfig.put(BaseParameter.FORMAT.getName(),
                      config.getString(
-                         MaxComputeSinkConnectorConfig.BaseParameter.FORMAT.getName()));
-      taskConfig.put(MaxComputeSinkConnectorConfig.BaseParameter.MODE.getName(),
-                     config.getString(MaxComputeSinkConnectorConfig.BaseParameter.MODE.getName()));
-      taskConfig.put(MaxComputeSinkConnectorConfig.BaseParameter.PARTITION_WINDOW_TYPE.getName(),
+                         BaseParameter.FORMAT.getName()));
+      taskConfig.put(BaseParameter.MODE.getName(),
+                     config.getString(BaseParameter.MODE.getName()));
+      taskConfig.put(BaseParameter.PARTITION_WINDOW_TYPE.getName(),
                      config.getString(
-                         MaxComputeSinkConnectorConfig.BaseParameter.PARTITION_WINDOW_TYPE.getName()));
-      taskConfig.put(MaxComputeSinkConnectorConfig.BaseParameter.TIME_ZONE.getName(),
+                         BaseParameter.PARTITION_WINDOW_TYPE.getName()));
+        taskConfig.put(BaseParameter.USE_NEW_PARTITION_FORMAT.getName(),
+            config.getString(BaseParameter.USE_NEW_PARTITION_FORMAT.getName()));
+      taskConfig.put(BaseParameter.TIME_ZONE.getName(),
                      config.getString(
-                         MaxComputeSinkConnectorConfig.BaseParameter.TIME_ZONE.getName()));
-      taskConfig.put(MaxComputeSinkConnectorConfig.BaseParameter.USE_STREAM_TUNNEL.getName(),
+                         BaseParameter.TIME_ZONE.getName()));
+      taskConfig.put(BaseParameter.USE_STREAM_TUNNEL.getName(),
                      config.getBoolean(
-                         MaxComputeSinkConnectorConfig.BaseParameter.USE_STREAM_TUNNEL.getName())
+                         BaseParameter.USE_STREAM_TUNNEL.getName())
                      ? "TRUE"
                      : "FALSE");
-      taskConfig.put(MaxComputeSinkConnectorConfig.BaseParameter.BUFFER_SIZE_KB.getName(),
+      taskConfig.put(BaseParameter.BUFFER_SIZE_KB.getName(),
                      Integer.toString(config.getInt(
-                         MaxComputeSinkConnectorConfig.BaseParameter.BUFFER_SIZE_KB.getName())));
-      taskConfig.put(MaxComputeSinkConnectorConfig.BaseParameter.FAIL_RETRY_TIMES.getName(),
+                         BaseParameter.BUFFER_SIZE_KB.getName())));
+      taskConfig.put(BaseParameter.FAIL_RETRY_TIMES.getName(),
                      Integer.toString(
                          config.getInt(
-                             MaxComputeSinkConnectorConfig.BaseParameter.FAIL_RETRY_TIMES.getName())));
+                             BaseParameter.FAIL_RETRY_TIMES.getName())));
 
-      taskConfig.put(MaxComputeSinkConnectorConfig.BaseParameter.POOL_SIZE.getName(),
+      taskConfig.put(BaseParameter.POOL_SIZE.getName(),
                      Integer.toString(config.getInt(
-                         MaxComputeSinkConnectorConfig.BaseParameter.POOL_SIZE.getName())));
-      taskConfig.put(MaxComputeSinkConnectorConfig.BaseParameter.RECORD_BATCH_SIZE.getName(),
+                         BaseParameter.POOL_SIZE.getName())));
+      taskConfig.put(BaseParameter.RECORD_BATCH_SIZE.getName(),
                      Integer.toString(
                          config.getInt(
-                             MaxComputeSinkConnectorConfig.BaseParameter.RECORD_BATCH_SIZE.getName())));
-      taskConfig.put(MaxComputeSinkConnectorConfig.BaseParameter.SKIP_ERROR.getName(),
+                             BaseParameter.RECORD_BATCH_SIZE.getName())));
+      taskConfig.put(BaseParameter.SKIP_ERROR.getName(),
                      config.getBoolean(
-                         MaxComputeSinkConnectorConfig.BaseParameter.SKIP_ERROR.getName()) ? "TRUE"
+                         BaseParameter.SKIP_ERROR.getName()) ? "TRUE"
                                                                                            : "FALSE");
       taskConfigs.push(taskConfig);
     }
