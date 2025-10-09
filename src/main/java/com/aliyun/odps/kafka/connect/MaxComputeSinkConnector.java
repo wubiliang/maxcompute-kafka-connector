@@ -143,11 +143,14 @@ public class MaxComputeSinkConnector extends SinkConnector {
       taskConfig.put(BaseParameter.PARTITION_WINDOW_TYPE.getName(),
                      config.getString(
                          BaseParameter.PARTITION_WINDOW_TYPE.getName()));
-        taskConfig.put(BaseParameter.USE_NEW_PARTITION_FORMAT.getName(),
-            config.getString(BaseParameter.USE_NEW_PARTITION_FORMAT.getName()));
+
+      taskConfig.put(BaseParameter.USE_NEW_PARTITION_FORMAT.getName(),
+            config.getBoolean(BaseParameter.USE_NEW_PARTITION_FORMAT.getName())? "TRUE": "FALSE");
+
       taskConfig.put(BaseParameter.TIME_ZONE.getName(),
                      config.getString(
                          BaseParameter.TIME_ZONE.getName()));
+
       taskConfig.put(BaseParameter.USE_STREAM_TUNNEL.getName(),
                      config.getBoolean(
                          BaseParameter.USE_STREAM_TUNNEL.getName())
