@@ -49,6 +49,7 @@ public class DefaultRecordConverter implements RecordConverter {
     out.setString(TOPIC, in.topic());
     out.setBigint(PARTITION, in.kafkaPartition().longValue());
     out.setBigint(OFFSET, in.kafkaOffset());
+    out.setBigint(INSERT_TIME, in.timestamp());
 
     switch (mode) {
       case KEY:
