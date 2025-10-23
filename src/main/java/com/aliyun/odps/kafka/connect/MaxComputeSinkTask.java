@@ -80,7 +80,6 @@ public class MaxComputeSinkTask extends SinkTask {
   private long odpsCreateLastTime;
   private long timeout;
   private String accountType;
-  private boolean useStreamTunnel;
   private int batchSize; // max_records in queue when sink writer can do run ;
 
   @Override
@@ -111,12 +110,6 @@ public class MaxComputeSinkTask extends SinkTask {
     converterBuilder.format(format).mode(mode);
     converterBuilder.schema(odps.tables().get(table).getSchema());
     recordConverter = converterBuilder.build();
-
-    useStreamTunnel = config.getBoolean(BaseParameter.USE_STREAM_TUNNEL.getName());
-
-    if (useStreamTunnel) {
-      LOGGER.info("MaxCompute Streaming Tunnel enable.");
-    }
 
     if (
       !StringUtils.isNullOrEmpty(config.getString(BaseParameter.RUNTIME_ERROR_TOPIC_NAME.getName()))
@@ -333,8 +326,7 @@ public class MaxComputeSinkTask extends SinkTask {
                                                 SinkStatusContext sinkStatusContext) {
     initOrRebuildOdps();
     return new MaxComputeSinkWriter(this.odps, records, sinkStatusContext, config, project, table,
-                                    recordConverter,
-                                    useStreamTunnel, runtimeErrorWriter);
+                                    recordConverter, runtimeErrorWriter);
   }
 
   @Override
