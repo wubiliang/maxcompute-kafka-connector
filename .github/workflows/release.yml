@@ -1,0 +1,56 @@
+# 工作流名称
+name: Release Kafka Connect Plugin
+
+# 触发条件：当一个符合 'v*.*.*' 格式的 tag 被创建并推送到 GitHub 时
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+# 工作流包含的任务
+jobs:
+  # 任务ID：build-and-release
+  build-and-release:
+    # 运行环境：使用最新版的 Ubuntu
+    runs-on: ubuntu-latest
+    # 授予 GitHub Token 写入 Release 的权限
+    permissions:
+      contents: write
+
+    # 任务步骤
+    steps:
+      # 步骤1：检出代码
+      # 使用 actions/checkout@v4 来获取你的代码
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 步骤2：设置 Java 环境
+      # 使用 actions/setup-java@v4 来安装指定版本的 Java
+      # 确保这里的 java-version 与你的项目要求一致
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+          cache: 'maven' # 缓存 Maven 依赖，加快后续构建速度
+
+      # 步骤3：使用 Maven 打包项目
+      # 这里的命令应与你本地打包的命令一致
+      # 通常是 'mvn package' 或 'mvn clean install'
+      # -DskipTests 会跳过测试，加快 release 过程，如果你希望运行测试，可以去掉它
+      - name: Build with Maven
+        run: mvn -B package --file pom.xml -DskipTests
+
+      # 步骤4：创建 GitHub Release 并上传构建产物
+      # 使用 softprops/action-gh-release@v2 这个流行的 action 来简化操作
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          # `generate_release_notes: true` 会自动生成从上一个 tag 到当前 tag 的更新日志
+          generate_release_notes: true
+          # `files` 字段指定了要上传的文件路径
+          # - 支持通配符 *
+          # - 你应该根据你的项目结构调整这里的路径
+          # - 假设你的 JAR 包在 target/ 目录下，并且你可能还有一个配置文件
+          files: |
+            target/*.jar
