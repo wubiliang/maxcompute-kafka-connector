@@ -179,8 +179,11 @@ public class MaxComputeSinkWriter implements Closeable, Callable<Boolean> {
     }
     try {
       flush();
-      close();
-      LOGGER.info("Flush {} records, from {} to {}", recordSize, start, end);
+      if (!useStreamingTunnel) {
+        close();
+      }
+      LOGGER.info("Flush {} records, from offset {} to {}, partition {}",
+                  recordSize, start, end, partitionSpec.toString(false, true));
       if (start != -1) {
         sinkStatusContext.addOffsetRange(start, end);
         sinkStatusContext.addTotalBytesSentByWriter(getTotalBytes());
@@ -373,7 +376,7 @@ public class MaxComputeSinkWriter implements Closeable, Callable<Boolean> {
 
   private void resetStreamUploadSessionIfNeeded(Long timestamp) throws OdpsException, IOException {
     if (needToResetUploadSession(timestamp)) {
-      LOGGER.info("Thread({}) Reset stream upload session, last timestamp: {}, current: {}",
+      LOGGER.debug("Thread({}) Reset stream upload session, last timestamp: {}, current: {}",
                   Thread.currentThread().getId(),
                   partitionStartTimestamp,
                   timestamp);
@@ -388,7 +391,7 @@ public class MaxComputeSinkWriter implements Closeable, Callable<Boolean> {
       streamSession =
         tunnel.buildStreamUploadSession(project, table).setPartitionSpec(partitionSpec)
           .setCreatePartition(true).build();
-      LOGGER.info("Thread({}) create streaming session {} successfully!",
+      LOGGER.debug("Thread({}) create streaming session {} successfully!",
                   Thread.currentThread().getId(), streamSession.getId());
       streamPack = recreateRecordPack();
       reusedRecord = streamSession.newRecord();
@@ -492,7 +495,7 @@ public class MaxComputeSinkWriter implements Closeable, Callable<Boolean> {
       }
     }
 
-    LOGGER.info("Generate partition spec: {}, timestamp {}", partitionSpec, timestamp);
+    LOGGER.debug("Generate partition spec: {}, timestamp {}", partitionSpec, timestamp);
 
     return partitionSpec;
   }
@@ -523,7 +526,7 @@ public class MaxComputeSinkWriter implements Closeable, Callable<Boolean> {
 
       partitionStartTimestamp = partitionStartDatetime.toEpochSecond();
 
-      LOGGER.info("Thread({}) reset partition start timestamp to {}",
+      LOGGER.debug("Thread({}) reset partition start timestamp to {}",
                   Thread.currentThread().getId(), partitionStartTimestamp);
     }
   }

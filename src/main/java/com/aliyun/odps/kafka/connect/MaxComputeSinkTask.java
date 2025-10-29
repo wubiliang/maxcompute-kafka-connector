@@ -35,6 +35,7 @@ import java.util.concurrent.Future;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
@@ -164,24 +165,18 @@ public class MaxComputeSinkTask extends SinkTask {
       // 需要记录当前收到的分区 offset 最小值
       cur.add(r);
       if (cur.size() >= batchSize) {
-        MaxComputeSinkWriter curWriter = createSinkWriter(cur, sinkStatusContext);
-        writerTasks.add(executor.submit(curWriter));
-        sinkStatusContext.resetRecordQueue();
+        super.context.requestCommit();
       }
-    }
-    if (needSyncCommit) {
-      LOGGER.info("Thread({}) Sync commit", Thread.currentThread().getId());
-      super.context.requestCommit();
     }
   }
 
   @Override
   public final Map<TopicPartition, OffsetAndMetadata> preCommit(
     Map<TopicPartition, OffsetAndMetadata> currentOffsets) {
-    LOGGER.info("Thread({}) PreCommit, currentOffsets {}", Thread.currentThread().getId(),
+    LOGGER.debug("Thread({}) PreCommit, currentOffsets {}", Thread.currentThread().getId(),
                 currentOffsets);
     Map<TopicPartition, OffsetAndMetadata> toCommitOffsets = new HashMap<>();
-    flush(currentOffsets);
+    flushInternal(currentOffsets);
 
     // 本地的offset 和 currentOffsets 进行比较; 告诉其哪些partition 哪些地方已经消费了可以提交
 
@@ -206,7 +201,7 @@ public class MaxComputeSinkTask extends SinkTask {
         toCommitOffsets.put(partition,
                             new OffsetAndMetadata(consumedOffset + 1,
                                                   offsetAndMetadata.metadata()));
-        LOGGER.info("partition:{} consumed offset: {}", partition, consumedOffset);
+        LOGGER.debug("partition:{} consumed offset: {}", partition, consumedOffset);
       }
     }
 
@@ -220,6 +215,9 @@ public class MaxComputeSinkTask extends SinkTask {
   @Override
   public final void flush(Map<TopicPartition, OffsetAndMetadata> offsets) {
     LOGGER.info("Thread({}) kafka flush, offsets {}", Thread.currentThread().getId(), offsets);
+  }
+
+  public final void flushInternal(Map<TopicPartition, OffsetAndMetadata> offsets) {
     if (LOGGER.isInfoEnabled()) {
       for (Entry<TopicPartition, OffsetAndMetadata> entry : offsets.entrySet()) {
         LOGGER.debug("Thread({}) FLUSH (topic: {}, partition: {})", Thread.currentThread().getId(),
@@ -254,28 +252,22 @@ public class MaxComputeSinkTask extends SinkTask {
     List<Future<Boolean>> errorFutures = new ArrayList<>();
     while (!writerTasks.isEmpty()) {
       Future<Boolean> f = null;
-      boolean result = false;
+      boolean result;
       try {
         f = writerTasks.poll();
         result = f.get();
       } catch (Throwable e) {
-        LOGGER.error("unrecoverable error happens: {} ,the task will exit! ", e.getMessage());
-        errorFutures.add(f);
+        throw new ConnectException(e.getMessage(), e);
       }
       if (!result) {
-        needSyncCommit = true;
+        throw new ConnectException("Task flush error.");
       }
     }
-    if (!errorFutures.isEmpty()) {
-      LOGGER.error("There are {} batchs fail when flush", errorFutures.size());
-      writerTasks.addAll(errorFutures);
-    }
-
     if (LOGGER.isInfoEnabled()) {
       totalBytesSentByClosedWriters = 0;
       sinkStatus.forEach(
         (pt, cxt) -> totalBytesSentByClosedWriters += cxt.getTotalBytesSentByWriter());
-      LOGGER.info("Total bytes written by multi-writer :{}", totalBytesSentByClosedWriters);
+      LOGGER.debug("Total bytes written by multi-writer :{}", totalBytesSentByClosedWriters);
     }
   }
 
@@ -307,6 +299,7 @@ public class MaxComputeSinkTask extends SinkTask {
                 totalBytesSentByClosedWriters, (System.currentTimeMillis()) - startTimestamp);
   }
 
+  // TODO: remove this
   private void initOrRebuildOdps() {
     LOGGER.debug("Enter initOrRebuildOdps!");
     // Exit fast
@@ -317,12 +310,17 @@ public class MaxComputeSinkTask extends SinkTask {
     if (!Account.AccountProvider.STS.name().equals(accountType)) {
       return;
     }
-    long current = System.currentTimeMillis();
-    if (current - odpsCreateLastTime > timeout) {
-      LOGGER.info("STS AK timed out. Last: {}, current: {}", odpsCreateLastTime, current);
-      this.odps = OdpsUtils.getOdps(config);
-      odpsCreateLastTime = current;
-      LOGGER.info("Account refreshed. Creation time: {}", current);
+    try {
+      long current = System.currentTimeMillis();
+      if (current - odpsCreateLastTime > timeout) {
+        LOGGER.info("STS AK timed out. Last: {}, current: {}", odpsCreateLastTime, current);
+        this.odps = OdpsUtils.getOdps(config);
+        odpsCreateLastTime = current;
+        LOGGER.info("Account refreshed. Creation time: {}", current);
+      }
+    } catch (Exception e) {
+      LOGGER.error("Refresh account error: {}", e.getMessage(), e);
+      throw new ConnectException(e.getMessage(), e);
     }
   }
 
